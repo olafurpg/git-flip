@@ -13,28 +13,30 @@ import scala.util.Success
 import gitflip.GitFlipEnrichments._
 import java.nio.file.Paths
 import java.nio.file.StandardOpenOption
+import gitflip.internal.BuildInfo
 
 object Gitflip {
+  val app = CliApp(
+    BuildInfo.version,
+    "git-flip",
+    commands = List(
+      InstallCommand,
+      UninstallCommand,
+      CreateCommand,
+      AddCommand,
+      SwitchCommand,
+      PushCommand,
+      PullCommand,
+      AmendCommand,
+      ListCommand,
+      InfoCommand,
+      HelpCommand,
+      VersionCommand,
+      TabCompleteCommand
+    )
+  )
 
   def main(args: Array[String]): Unit = {
-    val app = CliApp(
-      "0.1.0",
-      "git-flip",
-      commands = List(
-        InitCommand,
-        CreateCommand,
-        AddCommand,
-        SwitchCommand,
-        PushCommand,
-        PullCommand,
-        AmendCommand,
-        ListCommand,
-        InfoCommand,
-        HelpCommand,
-        VersionCommand,
-        TabCompleteCommand
-      )
-    )
     val (argsList, cwd) = args.toList match {
       case "--cwd" :: path :: tail =>
         tail -> Paths.get(path).toAbsolutePath

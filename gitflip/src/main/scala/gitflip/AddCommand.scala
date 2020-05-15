@@ -12,7 +12,7 @@ object AddCommand extends Command[AddOptions]("add") {
   override def description: Doc =
     Doc.text("Add changed files to git from minirepo")
   def run(value: Value, app: CliApp): Int = {
-    currentName(app) match {
+    SharedCommand.currentName(app) match {
       case Some(name) =>
         val includes = app.includes(name)
         if (!Files.isRegularFile(includes)) {
@@ -27,14 +27,4 @@ object AddCommand extends Command[AddOptions]("add") {
     }
   }
 
-  def currentName(app: CliApp): Option[String] = {
-    if (!Files.isRegularFile(app.git)) {
-      app.error(s"cannot add since ${app.git} is not a regular file")
-      None
-    } else {
-      app.git.readText.linesIterator.toList.collectFirst {
-        case s"gitdir: $path" => Paths.get(path).getFileName().toString()
-      }
-    }
-  }
 }

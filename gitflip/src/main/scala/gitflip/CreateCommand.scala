@@ -8,6 +8,7 @@ import scala.jdk.CollectionConverters._
 import java.nio.file.StandardCopyOption
 import java.nio.file.StandardOpenOption
 import org.typelevel.paiges.Doc
+import scala.collection.mutable
 
 object CreateCommand extends Command[CreateOptions]("create") {
   override def description: Doc = Doc.text("Create new git minirepo")
@@ -36,11 +37,12 @@ object CreateCommand extends Command[CreateOptions]("create") {
             )
             1
           } else {
-            if (InitCommand.run((), app) == 0) {
-              require(
-                Files.isRegularFile(app.git),
-                "git-flip is not initialized!"
-              )
+            val installExit =
+              InstallCommand.run((), app, isInstallCommand = false)
+            if (installExit != 0) {
+              installExit
+            } else {
+              require(Files.isRegularFile(app.git), "git-flip is not installed")
               val backup = Files.createTempFile("git-flip", ".git")
               Files.move(app.git, backup, StandardCopyOption.REPLACE_EXISTING)
               if (
@@ -51,46 +53,51 @@ object CreateCommand extends Command[CreateOptions]("create") {
                   minirepo.toString()
                 ) == 0
               ) {
-                val exclude = app.exclude(name)
-                val includes = app.includes(name)
-                val includeDirectories = value.directories.map(_.toString())
-                // TODO: validate the number of files to add is smaller than 50k
-                Files.write(
-                  exclude,
-                  List("*").asJava,
-                  StandardOpenOption.CREATE,
-                  StandardOpenOption.TRUNCATE_EXISTING
-                )
-                Files.write(
-                  includes,
-                  includeDirectories.asJava,
-                  StandardOpenOption.CREATE,
-                  StandardOpenOption.TRUNCATE_EXISTING
-                )
-                if (
-                  app.exec(
-                    List("git", "add", "--force") ++ includeDirectories
-                  ) == 0
-                ) {
+                writeInclude(value, app, name)
+                writeExclude(app, name)
+                app.exec(List("git", "add", ".")).ifSuccessful {
                   app.exec(
                     "git",
                     "commit",
                     "-m",
                     s"First commit in minirepo $name"
                   )
-                } else {
-                  1
                 }
               } else {
                 Files.move(backup, app.git)
                 app.error(s"Failed to create new minirepo named '$name'")
                 1
               }
-            } else {
-              1
             }
           }
       }
     }
+  }
+  def writeInclude(value: Value, app: CliApp, name: String): Unit = {
+    val includes = app.includes(name)
+    val includeDirectories =
+      value.directories.map(dir => app.toAbsolutePath(dir).toString())
+    Files.write(
+      includes,
+      includeDirectories.asJava,
+      StandardOpenOption.CREATE,
+      StandardOpenOption.TRUNCATE_EXISTING
+    )
+  }
+  def writeExclude(app: CliApp, name: String): Unit = {
+    val includes = app.readIncludes(name)
+    val excludes = mutable.ListBuffer.empty[String]
+    val toplevel = app.toplevel
+    excludes += "/*"
+    includes.foreach { include =>
+      val relativePath = toplevel.relativize(include)
+      excludes += s"!/$relativePath"
+    }
+    Files.write(
+      app.exclude(name),
+      excludes.asJava,
+      StandardOpenOption.CREATE,
+      StandardOpenOption.TRUNCATE_EXISTING
+    )
   }
 }
