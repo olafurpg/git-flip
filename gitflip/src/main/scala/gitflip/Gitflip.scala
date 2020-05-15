@@ -13,12 +13,13 @@ import scala.util.Success
 import gitflip.GitFlipEnrichments._
 import java.nio.file.Paths
 import java.nio.file.StandardOpenOption
+import gitflip.internal.BuildInfo
 
 object Gitflip {
 
   def main(args: Array[String]): Unit = {
     val app = CliApp(
-      "0.1.0",
+      BuildInfo.version,
       "git-flip",
       commands = List(
         InitCommand,

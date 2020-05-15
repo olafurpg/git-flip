@@ -1,10 +1,6 @@
-lazy val V = new {
-  val version = "0.1.0-SNAPSHOT"
-}
 inThisBuild(
   List(
     organization := "com.geirsson",
-    version := V.version
   )
 )
 
@@ -18,5 +14,10 @@ lazy val gitflip = project
     scalaVersion := "2.13.2",
     libraryDependencies ++= List(
       "com.geirsson" %% "metaconfig-core" % "0.9.10"
+    ),
+    buildInfoPackage := "gitflip.internal",
+    buildInfoKeys := Seq[BuildInfoKey](
+      version
     )
   )
+  .enablePlugins(BuildInfoPlugin)

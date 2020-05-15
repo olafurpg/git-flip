@@ -16,15 +16,15 @@ object InfoCommand extends Command[InfoOptions]("info") {
       case els => els
     }
     val errors: List[Int] = value.minirepo.map { repo =>
-      val exclude = app.exclude(repo)
-      if (Files.isRegularFile(exclude)) {
-        Files.readAllLines(exclude).forEach { line =>
+      val includes = app.includes(repo)
+      if (Files.isRegularFile(includes)) {
+        Files.readAllLines(includes).forEach { line =>
           if (line.startsWith("#") || line.isEmpty()) ()
           else app.out.println(line)
         }
         0
       } else {
-        app.error(s"no such file '$exclude'")
+        app.error(s"no such file '$includes'")
         1
       }
     }
