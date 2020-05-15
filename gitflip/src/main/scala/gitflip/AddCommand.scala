@@ -6,8 +6,11 @@ import GitFlipEnrichments._
 import java.nio.file.Files
 import java.nio.charset.StandardCharsets
 import java.nio.file.Paths
+import org.typelevel.paiges.Doc
 
 object AddCommand extends Command[AddOptions]("add") {
+  override def description: Doc =
+    Doc.text("Add changed files to git from minirepo")
   def run(value: Value, app: CliApp): Int = {
     currentName(app) match {
       case Some(name) =>

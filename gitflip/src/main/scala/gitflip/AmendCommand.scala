@@ -6,8 +6,11 @@ import GitFlipEnrichments._
 import java.io.PrintWriter
 import java.nio.file.Path
 import scala.util.control.NonFatal
+import org.typelevel.paiges.Doc
 
 object AmendCommand extends Command[AmendOptions]("amend") {
+  override def description: Doc =
+    Doc.text("Edit the list of directories to track in this minirepo")
   def run(value: Value, app: CliApp): Int = {
     SwitchCommand.withMinirepo("amend", value.minirepo, app) { name =>
       Option(System.getenv("EDITOR")) match {
@@ -18,7 +21,11 @@ object AmendCommand extends Command[AmendOptions]("amend") {
           )
           1
         case Some(editor) =>
-          editFile(editor, app.exclude(name), app)
+          if (editFile(editor, app.includes(name), app) == 0) {
+            AddCommand.run(AddOptions(value.minirepo), app)
+          } else {
+            1
+          }
       }
     }
   }

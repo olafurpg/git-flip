@@ -7,8 +7,10 @@ import gitflip.GitFlipEnrichments._
 import scala.jdk.CollectionConverters._
 import java.nio.file.StandardCopyOption
 import java.nio.file.StandardOpenOption
+import org.typelevel.paiges.Doc
 
 object CreateCommand extends Command[CreateOptions]("create") {
+  override def description: Doc = Doc.text("Create new git minirepo")
   def run(value: Value, app: CliApp): Int = {
     if (value.directories.isEmpty) {
       app.error(
@@ -52,6 +54,7 @@ object CreateCommand extends Command[CreateOptions]("create") {
                 val exclude = app.exclude(name)
                 val includes = app.includes(name)
                 val includeDirectories = value.directories.map(_.toString())
+                // TODO: validate the number of files to add is smaller than 50k
                 Files.write(
                   exclude,
                   List("*").asJava,

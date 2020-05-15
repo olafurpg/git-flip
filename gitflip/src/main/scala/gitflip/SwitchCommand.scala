@@ -5,8 +5,10 @@ import metaconfig.cli.Command
 import GitFlipEnrichments._
 import java.nio.file.Files
 import java.nio.charset.StandardCharsets
+import org.typelevel.paiges.Doc
 
 object SwitchCommand extends Command[SwitchOptions]("switch") {
+  override def description: Doc = Doc.text("Switch between git minirepos")
   def run(value: Value, app: CliApp): Int = {
     withMinirepo("switch", value.minirepo, app) { name =>
       val minirepo = app.minirepo(name)

@@ -13,8 +13,11 @@ import scala.util.Success
 import gitflip.GitFlipEnrichments._
 import java.nio.file.Paths
 import java.nio.file.StandardOpenOption
+import org.typelevel.paiges.Doc
 
 object InitCommand extends Command[Unit]("init") {
+  override def description: Doc =
+    Doc.text("Configure git repository for git-flip")
   def run(value: Value, app: CliApp): Int = {
     if (Files.isRegularFile(app.git)) 0
     else if (Files.isDirectory(app.git)) {
