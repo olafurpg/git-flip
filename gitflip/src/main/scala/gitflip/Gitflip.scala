@@ -10,31 +10,32 @@ import java.nio.file.Files
 import scala.util.Try
 import scala.util.Failure
 import scala.util.Success
-import gitflip.GitFlipEnrichments._
+import gitflip.GitflipEnrichments._
 import java.nio.file.Paths
 import java.nio.file.StandardOpenOption
 import gitflip.internal.BuildInfo
 
 object Gitflip {
-  val app = CliApp(
-    BuildInfo.version,
-    "git-flip",
-    commands = List(
-      InstallCommand,
-      UninstallCommand,
-      CreateCommand,
-      AddCommand,
-      SwitchCommand,
-      PushCommand,
-      PullCommand,
-      AmendCommand,
-      ListCommand,
-      InfoCommand,
-      HelpCommand,
-      VersionCommand,
-      TabCompleteCommand
+  def app =
+    CliApp(
+      BuildInfo.version,
+      "git-flip",
+      commands = List(
+        InstallCommand,
+        UninstallCommand,
+        StartCommand,
+        StopCommand,
+        SyncCommand,
+        SwitchCommand,
+        AmendCommand,
+        ListCommand,
+        CurrentCommand,
+        InfoCommand,
+        HelpCommand,
+        VersionCommand,
+        TabCompleteCommand
+      )
     )
-  )
 
   def main(args: Array[String]): Unit = {
     val (argsList, cwd) = args.toList match {

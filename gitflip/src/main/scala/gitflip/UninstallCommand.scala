@@ -2,7 +2,7 @@ package gitflip
 
 import metaconfig.cli.Command
 import metaconfig.cli.CliApp
-import GitFlipEnrichments._
+import GitflipEnrichments._
 import java.nio.file.Files
 import java.nio.file.SimpleFileVisitor
 import java.nio.file.Path
@@ -12,8 +12,9 @@ import org.typelevel.paiges.Doc
 import java.nio.file.StandardCopyOption
 
 object UninstallCommand extends Command[Unit]("uninstall") {
-  override def description: Doc = Doc.text("Revert git-flip installation")
-  def run(value: Value, app: CliApp): Int = {
+  override def description: Doc = Doc.text("Revert this git-flip installation")
+  def run(value: Value, cli: CliApp): Int = {
+    val app = new Flip(cli)
     if (!Files.isRegularFile(app.git)) {
       app.info(s"nothing to do, ${app.binaryName} is not installed")
       0

@@ -26,13 +26,13 @@ class DeleteVisitor extends SimpleFileVisitor[Path] {
 }
 
 object DeleteVisitor {
-  def deleteRecursively(path: Path, app: CliApp): Int = {
+  def deleteRecursively(path: Path, app: Flip): Int = {
     try {
       Files.walkFileTree(path, new DeleteVisitor)
       0
     } catch {
       case e: IOException =>
-        e.printStackTrace(app.err)
+        e.printStackTrace(app.cli.err)
         1
     }
   }

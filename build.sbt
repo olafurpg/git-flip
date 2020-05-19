@@ -1,6 +1,8 @@
 inThisBuild(
   List(
-    organization := "com.geirsson"
+    organization := "com.geirsson",
+    scalacOptions += "-Yrangepos",
+    useSuperShell := false
   )
 )
 
@@ -22,8 +24,10 @@ lazy val gitflip = project
     mainClass := Some("gitflip.Gitflip"),
     scalaVersion := "2.13.2",
     libraryDependencies ++= List(
-      "com.geirsson" %% "metaconfig-core" % "0.9.10"
+      "com.geirsson" %% "metaconfig-core" % "0.9.10",
+      "org.scalameta" %% "munit" % "0.7.7" % Test
     ),
+    testFrameworks := List(new TestFramework("munit.Framework")),
     buildInfoPackage := "gitflip.internal",
     buildInfoKeys := Seq[BuildInfoKey](
       version
@@ -37,8 +41,12 @@ lazy val gitflip = project
       assert(reflectionFile.exists, "no such file: " + reflectionFile)
       List(
         "-H:+ReportUnsupportedElementsAtRuntime",
-        "--initialize-at-build-time",
-        "--initialize-at-run-time=metaconfig",
+        "--initialize-at-build-time=scala.runtime.Statics$VM",
+        "--initialize-at-build-time=scala.Symbol",
+        "--initialize-at-build-time=scala.Function1",
+        "--initialize-at-build-time=scala.Function2",
+        "--initialize-at-build-time=scala.runtime.StructuralCallSite",
+        "--initialize-at-build-time=scala.runtime.EmptyMethodCache",
         "--no-server",
         "--enable-http",
         "--enable-https",

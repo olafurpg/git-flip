@@ -10,64 +10,69 @@ import java.nio.file.Files
 import scala.util.Try
 import scala.util.Failure
 import scala.util.Success
-import gitflip.GitFlipEnrichments._
+import gitflip.GitflipEnrichments._
 import java.nio.file.Paths
 import java.nio.file.StandardOpenOption
 import org.typelevel.paiges.Doc
 import java.io.ByteArrayOutputStream
 import java.io.PrintStream
+import scala.io.StdIn
 
 object InstallCommand extends Command[Unit]("install") {
   override def description: Doc =
-    Doc.text("Configure git repository for git-flip")
-  def run(value: Value, app: CliApp): Int = {
-    run(value, app, isInstallCommand = true)
+    Doc.text("Configure this git repository for git-flip")
+  def run(value: Value, cli: CliApp): Int = {
+    run(value, new Flip(cli), isInstallCommand = true)
   }
-  def run(value: Value, app: CliApp, isInstallCommand: Boolean): Int = {
+  def run(value: Value, app: Flip, isInstallCommand: Boolean): Int = {
     if (Files.isRegularFile(app.git)) {
-      app.info(s"nothing to do, ${app.binaryName} is already installed")
+      if (isInstallCommand) {
+        app.cli.info(
+          s"nothing to do, ${app.cli.binaryName} is already installed"
+        )
+      }
       0
     } else if (Files.isDirectory(app.git)) {
-      app.warn(
-        s"${app.binaryName} is an experimental tool that may destroy your git repository."
+      app.cli.warn(
+        s"${app.cli.binaryName} is an experimental tool that may destroy your git repository."
       )
-      app.warn(
+      app.cli.warn(
         s"make sure you have prepared a backup of the git repository '${app.git}' before continuing."
       )
       val message =
-        s"are you sure you want to install ${app.binaryName}? [y/N] "
+        s"are you sure you want to install ${app.cli.binaryName}? [y/N] "
       app.confirm(message) match {
         case Left(exit) => exit
         case Right(isConfirmed) =>
           if (isConfirmed) {
             val exit = initialize(app)
             if (exit == 0 && isInstallCommand) {
-              app.info(
+              app.cli.info(
                 s"installation complete. To get started with run:\n\t" +
-                  s"${app.binaryName} create --name NAME <directory>... "
+                  s"${app.cli.binaryName} create --name NAME <directory>... "
               )
             }
             exit
           } else {
-            app.info("doing nothing")
-            0
+            app.cli.info("doing nothing")
+            1
           }
       }
     } else if (!Files.exists(app.git)) {
-      app.error(
-        s"not a git repository '${app.workingDirectory}'. " +
+      app.cli.error(
+        s"not a git repository '${app.cli.workingDirectory}'. " +
           s"to fix this problem, make sure the path '${app.git}' points to a git directory or file."
       )
       1
     } else if (!Files.isSymbolicLink(app.git)) {
-      app.error(s"symbolic links are not supported: ${app.git}")
+      app.cli.error(s"symbolic links are not supported: ${app.git}")
       1
     } else {
-      app.error(s"unsupported file type: ${app.git}")
+      app.cli.error(s"unsupported file type: ${app.git}")
       1
     }
   }
-  def initialize(app: CliApp): Int = {
+  def initialize(app: Flip): Int = {
     import scala.sys.process._
     Files.createDirectories(app.megarepo)
     val args =
@@ -86,7 +91,7 @@ object InstallCommand extends Command[Unit]("install") {
       // ignore error, installation succeeded.
       0
     } else {
-      app.err.print(out)
+      app.cli.err.print(out)
       exit
     }
   }

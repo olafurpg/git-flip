@@ -3,17 +3,32 @@ package gitflip
 import metaconfig.cli.Command
 import metaconfig.cli.CliApp
 import java.nio.file.Files
-import GitFlipEnrichments._
+import GitflipEnrichments._
 import org.typelevel.paiges.Doc
+import scala.collection.mutable
 
 object ListCommand extends Command[Unit]("list") {
   override def description: Doc =
-    Doc.text("List all minirepos in this git workspace")
-  def run(value: Value, app: CliApp): Int = {
+    Doc.text("List all installed git repos")
+  def run(value: Value, cli: CliApp): Int = {
+    val app = new Flip(cli)
+    if (app.requireInstalled()) {
+      1
+    } else {
+      all(app).foreach(r => cli.out.println(r))
+      0
+    }
+  }
+  def all(app: Flip): List[String] = {
     val ls = Files.list(app.gitflip)
+    val buf = mutable.ListBuffer.empty[String]
     try {
-      ls.forEach { p => app.out.println(p.getFileName()) }
-    } finally ls.close()
-    0
+      ls.forEach { p =>
+        buf += p.getFileName().toString
+      }
+    } finally {
+      ls.close()
+    }
+    buf.toList
   }
 }
