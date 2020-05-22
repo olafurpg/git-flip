@@ -14,7 +14,7 @@ addCommandAlias(
 )
 commands += Command.command("taskready") { s =>
   import scala.sys.process._
-  "say 'native-image ready'".!
+  scala.util.Try("say 'native-image ready'".!)
   s
 }
 
