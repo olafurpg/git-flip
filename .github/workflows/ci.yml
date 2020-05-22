@@ -4,9 +4,9 @@ on:
     branches:
       - master
     tags:
-      - '*'
+      - "*"
   pull_request:
-  
+
 jobs:
   test:
     runs-on: ubuntu-latest
@@ -16,6 +16,8 @@ jobs:
         with:
           java-version: graalvm@20.0.0
       - run: git fetch --tags
+      - run: git config --global user.email "you@example.com"
+      - run: git config --global user.name "Your Name"
       - run: sbt test
   native-image:
     runs-on: ${{ matrix.os }}
