@@ -10,7 +10,7 @@ skip in publish := true
 crossScalaVersions := Nil
 addCommandAlias(
   "native-image",
-  "; gitflip/graalvm-native-image:packageBin ; taskready"
+  "; gitmini/graalvm-native-image:packageBin ; taskready"
 )
 commands += Command.command("taskready") { s =>
   import scala.sys.process._
@@ -18,22 +18,19 @@ commands += Command.command("taskready") { s =>
   s
 }
 
-lazy val gitflip = project
+lazy val gitmini = project
   .settings(
-    moduleName := "git-flip",
-    mainClass := Some("gitflip.Gitflip"),
+    moduleName := "git-mini",
+    mainClass := Some("gitmini.GitMini"),
     scalaVersion := "2.13.2",
     libraryDependencies ++= List(
       "com.geirsson" %% "metaconfig-core" % "0.9.10",
       "org.scalameta" %% "munit" % "0.7.7" % Test
     ),
     testFrameworks := List(new TestFramework("munit.Framework")),
-    buildInfoPackage := "gitflip.internal",
+    buildInfoPackage := "gitmini.internal",
     buildInfoKeys := Seq[BuildInfoKey](
       version
-    ),
-    mainClass in GraalVMNativeImage := Some(
-      "gitflip.Gitflip"
     ),
     graalVMNativeImageOptions ++= {
       val reflectionFile =
