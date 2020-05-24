@@ -25,7 +25,7 @@ object SwitchCommand extends Command[SwitchOptions]("switch") {
         app.git,
         s"gitdir: $minirepo".getBytes(StandardCharsets.UTF_8)
       )
-      app.cli.info(s"switched to mini-repo '$name'")
+      app.cli.info(s"switched to minirepo '$name'")
       0
     }
   }

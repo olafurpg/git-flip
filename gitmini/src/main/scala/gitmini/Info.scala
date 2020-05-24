@@ -9,7 +9,7 @@ import org.typelevel.paiges.Doc
 
 object InfoCommand extends Command[InfoOptions]("info") {
   override def description: Doc =
-    Doc.text("Show directories that are tracked by this mini-repo")
+    Doc.text("Show directories that are tracked by this minirepo")
   def run(value: Value, cli: CliApp): Int = {
     val app = new Flip(cli)
     val minirepo = value.minirepo match {

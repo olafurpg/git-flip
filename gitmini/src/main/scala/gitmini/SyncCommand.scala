@@ -9,7 +9,7 @@ import metaconfig.cli.Messages
 
 object SyncCommand extends Command[SyncOptions]("sync") {
   override def description: Doc =
-    Doc.text("Pull latest changes from the mega-repo into the mini-repo")
+    Doc.text("Pull latest changes from the megarepo into the minirepo")
   override def options: Doc = Messages.options(SyncOptions.default)
   def run(value: Value, cli: CliApp): Int = {
     val app = new Flip(cli)
@@ -19,13 +19,13 @@ object SyncCommand extends Command[SyncOptions]("sync") {
         val minirepo = app.minirepo(name)
         if (Files.isSameFile(app.megarepo, minirepo)) {
           app.error(
-            s"can't ${app.binaryName} sync inside the mega-repo, use 'git pull origin master' instead"
+            s"can't ${app.binaryName} sync inside the megarepo, use 'git pull origin master' instead"
           )
           1
         } else if (app.megarepoBranch() != "master") {
           app.error(
-            s"can't ${app.binaryName} sync when the mega-repo is on branch '${app.megarepoBranch}'. " +
-              s"To fix this problem, manually change to the 'master' branch in the mega-repo:" +
+            s"can't ${app.binaryName} sync when the megarepo is on branch '${app.megarepoBranch}'. " +
+              s"To fix this problem, manually change to the 'master' branch in the megarepo:" +
               s"\n\t${app.binaryName} switch ${app.megarepoName} && \\" +
               s"\n\tgit checkout master &&\\" +
               s"\n\t${app.binaryName} switch $name"

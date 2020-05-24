@@ -6,7 +6,7 @@ import org.typelevel.paiges.Doc
 
 object CurrentCommand extends Command[Unit]("current") {
   override def description: Doc =
-    Doc.text("Show the current active mini-repo")
+    Doc.text("Show the current active minirepo")
   def run(value: Value, cli: CliApp): Int = {
     val app = new Flip(cli)
     app.currentName() match {

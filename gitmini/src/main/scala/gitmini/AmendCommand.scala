@@ -10,13 +10,13 @@ import org.typelevel.paiges.Doc
 
 object AmendCommand extends Command[AmendOptions]("amend") {
   override def description: Doc =
-    Doc.text("Edit the list of directories that are tracked by this mini-repo")
+    Doc.text("Edit the list of directories that are tracked by this minirepo")
   def run(value: Value, cli: CliApp): Int = {
     val app = new Flip(cli)
     app.withMinirepo("amend", value.minirepo) { name =>
       if (app.megarepo == app.minirepo(name)) {
         app.cli.error(
-          "can't amend the mega-krepo. To run amend, you must be inside a mini-repo."
+          "can't amend the mega-krepo. To run amend, you must be inside a minirepo."
         )
         1
       } else {
@@ -30,7 +30,7 @@ object AmendCommand extends Command[AmendOptions]("amend") {
           case Some(editor) =>
             app.execTty(s"$editor ${app.includes(name)}").ifSuccessful {
               StartCommand.writeExclude(app, name)
-              app.commitAll(s"${app.binaryName}: amend mini-repo")
+              app.commitAll(s"${app.binaryName}: amend minirepo")
             }
         }
       }

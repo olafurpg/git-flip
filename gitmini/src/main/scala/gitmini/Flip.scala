@@ -96,7 +96,7 @@ class Flip(val cli: CliApp) {
       .normalize()
   def megarepo: Path =
     gitmini.resolve(megarepoName)
-  def megarepoName = "mega-repo"
+  def megarepoName = "megarepo"
   def minirepo(name: String): Path = {
     gitmini.resolve(name)
   }
@@ -236,8 +236,8 @@ class Flip(val cli: CliApp) {
     minirepos.headOption match {
       case None =>
         cli.error(
-          s"can't $what to a mini-repo since no argument was provided.\n\t" +
-            s"To list existing mini-repos run: ${cli.binaryName} list"
+          s"can't $what to a minirepo since no argument was provided.\n\t" +
+            s"To list existing minirepos run: ${cli.binaryName} list"
         )
         1
       case Some(name) =>
@@ -264,7 +264,7 @@ class Flip(val cli: CliApp) {
       case Some(candidate) => s"\n\tDid you mean '$candidate'?"
       case None            => ""
     }
-    cli.error(s"mini-repo '$name' does not exist$didYouMean")
+    cli.error(s"minirepo '$name' does not exist$didYouMean")
     1
   }
   def binaryName = cli.binaryName
@@ -312,7 +312,6 @@ class Flip(val cli: CliApp) {
         val isOutside = name != megarepoName
         if (isOutside)
           error(
-            s"can only run ${cli.binaryName} $what inside the mega-repo. " +
               s"To fix this problem run:" +
               s"\n\t${cli.binaryName} switch $megarepoName"
           )
@@ -325,7 +324,7 @@ class Flip(val cli: CliApp) {
     val isDirty = status().nonEmpty
     if (isDirty)
       error(
-        "can't create a mini-repo with uncommitted changes. " +
+        "can't create a minirepo with uncommitted changes. " +
           "To fix this problem, commit your unsaved changes first:" +
           "\n\tgit add . && git commit"
       )

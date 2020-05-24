@@ -14,12 +14,12 @@ import scala.util.Try
 import scala.io.StdIn
 
 object StartCommand extends Command[StartOptions]("start") {
-  override def description: Doc = Doc.text("Create a new mini-repo")
+  override def description: Doc = Doc.text("Create a new minirepo")
   def run(value: Value, cli: CliApp): Int = {
     val app = new Flip(cli)
     if (value.directories.isEmpty) {
       app.cli.error(
-        s"can't create a new mini-repo from an empty list of directories to exclude. " +
+        s"can't create a new minirepo from an empty list of directories to exclude. " +
           s"To fix this problem, pass the directory that you wish to exclude. For example:\n\t" +
           s"${app.cli.binaryName} create my-directory"
       )
@@ -36,14 +36,14 @@ object StartCommand extends Command[StartOptions]("start") {
       1
     } else if (value.name.isEmpty) {
       app.cli.error(
-        "missing --name. To fix this problem, provide a name for the new mini-repo:\n\t" +
-          s"${app.cli.binaryName} create --name mini-repo_NAME ${value.directories.mkString(" ")}"
+        "missing --name. To fix this problem, provide a name for the new minirepo:\n\t" +
+          s"${app.cli.binaryName} create --name minirepo_NAME ${value.directories.mkString(" ")}"
       )
       1
     } else if (Files.isDirectory(app.minirepo(value.name))) {
       app.cli.error(
-        s"can't create mini-repo '$name' because it already exists.\n\t" +
-          s"To amend this mini-repo run: ${app.cli.binaryName} amend $name"
+        s"can't create minirepo '$name' because it already exists.\n\t" +
+          s"To amend this minirepo run: ${app.cli.binaryName} amend $name"
       )
       1
     } else if (app.requireCleanStatus()) {
@@ -86,7 +86,7 @@ object StartCommand extends Command[StartOptions]("start") {
       }
 
       if (exit != 0) {
-        app.cli.error(s"Failed to create new mini-repo named '$name'")
+        app.cli.error(s"Failed to create new minirepo named '$name'")
       }
       exit
     }
@@ -101,17 +101,17 @@ object StartCommand extends Command[StartOptions]("start") {
           "see if you have uncommited changes"
         ),
         "git ls-files" -> Doc.text(
-          "list what files are tracked in this mini-repo"
+          "list what files are tracked in this minirepo"
         ),
-        "git flip sync" -> Doc.text(
-          "pull latest changes from remote into this mini-repo"
+        "git mini sync" -> Doc.text(
+          "pull latest changes from remote into this minirepo"
         ),
-        s"git flip switch ${app.megarepoName}" -> Doc.text(
-          "pull latest changes from remote into this mini-repo"
+        s"git mini switch ${app.megarepoName}" -> Doc.text(
+          "pull latest changes from remote into this minirepo"
         )
       )
     )
-    "successfully initialized a new mini-repo. " +
+    "successfully initialized a new minirepo. " +
       "Here are some example commands you may want to run:\n" +
       examples.indent(2).render(80)
   }
