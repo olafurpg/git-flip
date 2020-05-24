@@ -38,6 +38,8 @@ lazy val gitmini = project
       assert(reflectionFile.exists, "no such file: " + reflectionFile)
       List(
         "-H:+ReportUnsupportedElementsAtRuntime",
+        "-H:+RemoveSaturatedTypeFlows",
+        "--install-exit-handlers",
         "--initialize-at-build-time=scala.runtime.Statics$VM",
         "--initialize-at-build-time=scala.Symbol",
         "--initialize-at-build-time=scala.Function1",
