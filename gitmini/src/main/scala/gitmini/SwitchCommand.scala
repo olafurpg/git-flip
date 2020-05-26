@@ -18,17 +18,24 @@ object SwitchCommand extends Command[SwitchOptions]("switch") {
   }
   def run(value: Value, cli: CliApp): Int = {
     val app = new Flip(cli)
-    app.withMinirepo("switch", value.minirepo) { name =>
-      val minirepo = app.minirepo(name)
-      // TODO: handle the case when the current repo is already this project.
-      Files.write(
-        app.git,
-        s"gitdir: $minirepo".getBytes(StandardCharsets.UTF_8)
-      )
-      if (name == app.megarepoName) {
-        app.cli.info(s"switched to the minirepo named '$name'")
-      } else {
-        app.cli.info(s"switched to the megarepo")
+    app.withMinirepo("switch", value.minirepo) { newName =>
+      val minirepo = app.minirepo(newName)
+      app.currentName() match {
+        case None =>
+          1
+        case Some(oldName) =>
+          if (newName == oldName) {
+            app.info(s"nothing to do, already on '$oldName'")
+            0
+          } else {
+            app.pausefile.writeText(oldName)
+            app.git.writeText(s"gitdir: $minirepo")
+            if (newName == app.megarepoName) {
+              app.cli.info(s"switched to the megarepo")
+            } else {
+              app.cli.info(s"switched to the minirepo '$newName'")
+            }
+          }
       }
       0
     }

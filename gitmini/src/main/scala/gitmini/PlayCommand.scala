@@ -22,11 +22,8 @@ object PlayCommand extends Command[Unit]("play") {
           SwitchCommand.run(SwitchOptions(List(minirepo)), cli)
         }
       case Some(other) =>
-        app.error(
-          s"can only run play command from the megarepo. " +
-            s"Your current minirepo is '$other'"
-        )
-        1
+        app.info(s"nothing to do, already in minirepo '$other'")
+        0
     }
   }
 }

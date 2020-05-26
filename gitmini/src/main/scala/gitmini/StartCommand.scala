@@ -17,6 +17,7 @@ object StartCommand extends Command[StartOptions]("start") {
   override def description: Doc = Doc.text("Create a new minirepo")
   def run(value: Value, cli: CliApp): Int = {
     val app = new Flip(cli)
+    val remoteName = app.remoteName(value.minirepoName)
     if (value.directories.isEmpty) {
       app.cli.error(
         s"can't create a new minirepo from an empty list of directories to exclude. " +
@@ -56,7 +57,14 @@ object StartCommand extends Command[StartOptions]("start") {
     } else if (app.requireBranch("master", name)) {
       1
     } else if (app.requireMasterBranchIsUpToDate(name)) {
-      ???
+      1
+    } else if (app.remote().contains(remoteName)) {
+      app.error(
+        s"can't create minirepo with the name '${value.minirepoName}' because " +
+          s"there is already another remote with a conflicting name. " +
+          s"To fix this problem, either remove the remote with 'git remote remove " +
+          s"$remoteName' or use a different name with '${app.binaryName} start --name OTHER_NAME'."
+      )
       1
     } else if (InstallCommand.run((), app, isInstallCommand = false) != 0) {
       app.error(s"${app.binaryName} installation failed")
@@ -64,12 +72,13 @@ object StartCommand extends Command[StartOptions]("start") {
     } else {
       require(Files.isRegularFile(app.git), "git-mini is not installed")
       Files.deleteIfExists(app.git)
+      val minirepo = app.minirepo(value.minirepoName).toString()
       val exit = for {
         _ <- app.exec(
           "git",
           "init",
           "--separate-git-dir",
-          app.minirepo(value.minirepoName).toString()
+          minirepo
         )
         _ <- {
           writeInclude(value, app, value.minirepoName)
@@ -77,6 +86,22 @@ object StartCommand extends Command[StartOptions]("start") {
           app.commitAll(app.syncToMegarepoMessage())
         }
         _ <- app.exec("git", "branch", "origin/master", "master")
+        _ <- app.exec(
+          "git",
+          s"--git-dir=${app.megarepo}",
+          "remote",
+          "add",
+          remoteName,
+          minirepo
+        )
+        _ <- app.exec(
+          // NOTE(olafur): use '/usr/bin/git' instead of 'git' since Apple git
+          // supports fetching from local file remotes.
+          "/usr/bin/git",
+          s"--git-dir=${app.megarepo}",
+          "fetch",
+          remoteName
+        )
       } yield {
         app.info(onSuccessMessage(app))
         0

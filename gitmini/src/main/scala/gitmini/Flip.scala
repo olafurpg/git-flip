@@ -16,6 +16,7 @@ import gitmini.GitMiniEnrichments._
 import java.io.PrintWriter
 import metaconfig.internal.Levenshtein
 import scala.jdk.CollectionConverters._
+import java.io.ByteArrayOutputStream
 
 class Flip(val cli: CliApp) {
   lazy val toplevel: Path =
@@ -24,8 +25,12 @@ class Flip(val cli: CliApp) {
         execString(List("git", "rev-parse", "--show-toplevel")).trim
       )
       .normalize()
-  def minirepoBranch(): String =
+  def currentBranch(): String =
     execString(List("git", "rev-parse", "--abbrev-ref", "HEAD")).trim
+  def currentHeadSha(): String =
+    currentSha("HEAD")
+  def currentSha(branch: String): String =
+    execString(List("git", "rev-parse", branch)).trim
   def megarepoBranch(): String =
     execString(
       List(
@@ -47,10 +52,10 @@ class Flip(val cli: CliApp) {
     ).trim
   def syncToMegarepoMessage(): String =
     s"$binaryName: sync to $megarepoName ${megarepoCommit()}"
-  lazy val flipBranchName: String = {
-    s"${System.getProperty("user.name")}/git-mini/$flipRepoName/$minirepoBranch"
+  def flipBranchName(miniRepo: String, miniBranch: String): String = {
+    s"${System.getProperty("user.name")}/git-mini/$miniRepo/$miniBranch"
   }
-  lazy val flipRepoName: String = {
+  def flipRepoName(): String = {
     git.readText.linesIterator.toList
       .collectFirst {
         case s"gitdir: $path" => Paths.get(path).getFileName().toString()
@@ -58,22 +63,6 @@ class Flip(val cli: CliApp) {
       .getOrElse {
         sys.error(s"$binaryName is not installed: $git")
       }
-  }
-  def checkoutMegarepoBranch(): Int = {
-    val targetName = flipBranchName
-    val actualName = megarepoBranch
-    if (actualName == targetName) 0
-    else {
-      val logger = new CaptureLogger
-      val checkout = exec(
-        List("git", s"--git-dir=$megarepo", "checkout", targetName),
-        logger = logger
-      )
-      if (checkout == 0) 0
-      else {
-        exec("git", s"--git-dir=$megarepo", "checkout", "-b", targetName)
-      }
-    }
   }
   def toAbsolutePath(path: Path): Path = {
     if (path.isAbsolute()) path
@@ -208,28 +197,16 @@ class Flip(val cli: CliApp) {
 
   def execTty(
       command: List[String],
-      isSilent: Boolean,
-      environment: Map[String, String] = Map.empty
+      isSilent: Boolean
   ): Int = {
     if (!isSilent) {
       info(command.formatAsCommand)
     }
-    val envp: Array[String] =
-      if (environment.isEmpty) null
-      else
-        environment.iterator.map {
-          case (k, v) => s"$k=$v"
-        }.toArray
     try {
-      // Adjusted from https://stackoverflow.com/questions/29733038/running-interactive-shell-program-in-java
-      val proc = Runtime
-        .getRuntime()
-        .exec(Array("/bin/bash"), envp, cli.workingDirectory.toFile())
-      val stdin = proc.getOutputStream()
-      val pw = new PrintWriter(stdin)
-      pw.println(s"$command < /dev/tty > /dev/tty")
-      pw.close()
-      proc.waitFor()
+      import scala.sys.process._
+      val tmp = Files.createTempFile("git-mini", "command.txt")
+      tmp.writeText(s"${command.formatAsCommand} < /dev/tty > /dev/tty")
+      ("/bin/bash" #< tmp.toFile()).!
     } catch {
       case NonFatal(e) =>
         e.printStackTrace(cli.out)
@@ -277,6 +254,14 @@ class Flip(val cli: CliApp) {
   def binaryName = cli.binaryName
   def error(message: String) = cli.error(message)
   def info(message: String) = cli.info(message)
+  def remoteName(name: String): String =
+    s"$binaryName-$name"
+  def remote(): List[String] =
+    execString(
+      List("git", "remote"),
+      isSilent = false
+    ).linesIterator.toList
+
   def status(): List[String] =
     execString(
       List("git", "status", "--porcelain"),
@@ -291,7 +276,7 @@ class Flip(val cli: CliApp) {
     }
   }
   def requireBranch(branchName: String, what: String): Boolean = {
-    val isWrongBranch = minirepoBranch() != branchName
+    val isWrongBranch = currentBranch() != branchName
     if (isWrongBranch)
       error(
         s"can only run ${cli.binaryName} $what when on the branch '$branchName'. " +
@@ -360,6 +345,20 @@ class Flip(val cli: CliApp) {
         "-m",
         message
       )
+    }
+  }
+
+  def checkoutOrCreate(targetName: String): Int = {
+    val actualName = currentBranch()
+    if (actualName == targetName) 0
+    else {
+      val logger = new CaptureLogger
+      val checkout = exec(
+        List("git", "checkout", targetName),
+        logger = logger
+      )
+      if (checkout == 0) 0
+      else exec("git", "checkout", "-b", targetName)
     }
   }
 }

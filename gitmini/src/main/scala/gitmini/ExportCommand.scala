@@ -4,6 +4,7 @@ import metaconfig.cli.Command
 import metaconfig.cli.CliApp
 import GitMiniEnrichments._
 import java.nio.file.Files
+import scala.collection.mutable
 
 object ExportCommand extends Command[ExportOptions]("export") {
   def run(value: Value, cli: CliApp): Int = {
@@ -31,8 +32,10 @@ object ExportCommand extends Command[ExportOptions]("export") {
       .execString(List("git", "diff", "--name-only", "origin/master"))
       .linesIterator
       .toList
+    val minirepoBranch = app.currentBranch()
+    val megarepoBranch = app.flipBranchName(minirepoName, minirepoBranch)
     for {
-      _ <-
+      _ <- {
         if (diff.isEmpty) {
           app.error(
             "nothing to export because the diff to origin/master is empty. " +
@@ -42,10 +45,24 @@ object ExportCommand extends Command[ExportOptions]("export") {
         } else {
           0
         }
+      }
+      _ <- app.exec(
+        "git",
+        "format-patch",
+        "--output-directory",
+        out.toString(),
+        "origin/master..HEAD"
+      )
       _ <- SwitchCommand.run(SwitchOptions(List(app.megarepoName)), app.cli)
       _ <- app.exec(List("git", "checkout", "--") ++ diff)
-      _ <- app.checkoutMegarepoBranch()
-      _ <- app.exec("git", "am", out.toString())
+      _ <- app.checkoutOrCreate(megarepoBranch)
+      _ <- app.exec(List("git", "reset", "--hard", "origin/master"))
+      _ <- {
+        val patches = mutable.ListBuffer.empty[String]
+        out.listForeach(p => patches += p.toString())
+        app.exec(List("git", "am") ++ patches.sorted)
+      }
+      _ <- app.exec("git", "checkout", megarepoBranch)
       _ <- SwitchCommand.run(SwitchOptions(List(minirepoName)), app.cli)
     } yield 0
   }
