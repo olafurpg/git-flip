@@ -42,16 +42,6 @@ object ExportCommand extends Command[ExportOptions]("export") {
         } else {
           0
         }
-      _ <- app.exec(
-        List(
-          "git",
-          "format-patch",
-          "--full-index",
-          "--output-directory",
-          out.toString,
-          "origin/master..HEAD"
-        )
-      )
       _ <- SwitchCommand.run(SwitchOptions(List(app.megarepoName)), app.cli)
       _ <- app.exec(List("git", "checkout", "--") ++ diff)
       _ <- app.checkoutMegarepoBranch()

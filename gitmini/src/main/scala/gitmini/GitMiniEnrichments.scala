@@ -47,6 +47,13 @@ object GitMiniEnrichments {
   }
 
   implicit class XtensionPath(path: Path) {
+    def listForeach(fn: Path => Unit): Unit = {
+      val ls = Files.list(path)
+      try ls.forEach(p => fn(p))
+      finally ls.close()
+    }
+    def readText: String =
+      new String(Files.readAllBytes(path), StandardCharsets.UTF_8)
     def writeText(text: String): Unit = {
       Files.createDirectories(path.getParent())
       Files.write(
@@ -56,13 +63,6 @@ object GitMiniEnrichments {
         StandardOpenOption.TRUNCATE_EXISTING
       )
     }
-    def listForeach(fn: Path => Unit): Unit = {
-      val ls = Files.list(path)
-      try ls.forEach(p => fn(p))
-      finally ls.close()
-    }
-    def readText: String =
-      new String(Files.readAllBytes(path), StandardCharsets.UTF_8)
   }
 
 }

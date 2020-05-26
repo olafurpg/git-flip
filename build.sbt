@@ -32,6 +32,20 @@ lazy val gitmini = project
     buildInfoKeys := Seq[BuildInfoKey](
       version
     ),
+    graalVMNativeImageCommand ~= { old =>
+      import scala.util.Try
+      import java.nio.file.Paths
+      import scala.sys.process._
+      Try {
+        val jabba = Paths
+          .get(sys.props("user.home"))
+          .resolve(".jabba")
+          .resolve("bin")
+          .resolve("jabba")
+        val home = s"$jabba which --home graalvm@20.1.0".!!.trim()
+        Paths.get(home).resolve("bin").resolve("native-image").toString
+      }.getOrElse(old)
+    },
     graalVMNativeImageOptions ++= {
       val reflectionFile =
         Keys.sourceDirectory.in(Compile).value./("graal")./("reflection.json")
@@ -54,7 +68,7 @@ lazy val gitmini = project
         "--initialize-at-build-time=scala.runtime.EmptyMethodCache",
         "--no-server",
         "--no-fallback",
-        "--allow-incomplete-classpath",
+        "--allow-incomplete-classpath"
       )
     }
   )
