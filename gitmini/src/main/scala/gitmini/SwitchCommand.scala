@@ -25,7 +25,11 @@ object SwitchCommand extends Command[SwitchOptions]("switch") {
         app.git,
         s"gitdir: $minirepo".getBytes(StandardCharsets.UTF_8)
       )
-      app.cli.info(s"switched to minirepo '$name'")
+      if (name == app.megarepoName) {
+        app.cli.info(s"switched to the minirepo named '$name'")
+      } else {
+        app.cli.info(s"switched to the megarepo")
+      }
       0
     }
   }
