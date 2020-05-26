@@ -206,7 +206,8 @@ class Flip(val cli: CliApp) {
       import scala.sys.process._
       val tmp = Files.createTempFile("git-mini", "command.txt")
       tmp.writeText(s"${command.formatAsCommand} < /dev/tty > /dev/tty")
-      ("/bin/bash" #< tmp.toFile()).!
+      val bash = Process(List("/bin/bash"), cwd = cli.workingDirectory.toFile())
+      (bash #< tmp.toFile()).!
     } catch {
       case NonFatal(e) =>
         e.printStackTrace(cli.out)
