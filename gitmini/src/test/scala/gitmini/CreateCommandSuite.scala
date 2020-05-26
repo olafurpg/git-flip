@@ -17,7 +17,7 @@ class CreateCommandSuite extends BaseSuite {
          |object Goodbye
          |""".stripMargin
     )
-    run("start", "--name", "hello", "hello")
+    run("start", "--name", "hello", "hello/src")
     assertEquals(lsFiles(), List(hello))
     assertEquals(
       execString("git", "diff", "origin/master"),

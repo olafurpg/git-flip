@@ -16,7 +16,7 @@ object AmendCommand extends Command[AmendOptions]("amend") {
     app.withMinirepo("amend", value.minirepo) { name =>
       if (app.megarepo == app.minirepo(name)) {
         app.cli.error(
-          "can't amend the mega-krepo. To run amend, you must be inside a minirepo."
+          "can't amend the mega-repo. To run amend, you must be inside a minirepo."
         )
         1
       } else {
@@ -28,10 +28,15 @@ object AmendCommand extends Command[AmendOptions]("amend") {
             )
             1
           case Some(editor) =>
-            app.execTty(s"$editor ${app.includes(name)}").ifSuccessful {
-              StartCommand.writeExclude(app, name)
-              app.commitAll(s"${app.binaryName}: amend minirepo")
-            }
+            app
+              .execTty(
+                List(editor, app.includes(name).toString()),
+                isSilent = true
+              )
+              .ifSuccessful {
+                StartCommand.writeExclude(app, name)
+                app.commitAll(s"${app.binaryName}: amend minirepo")
+              }
         }
       }
     }

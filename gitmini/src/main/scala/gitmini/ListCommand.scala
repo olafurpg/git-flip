@@ -8,6 +8,7 @@ import org.typelevel.paiges.Doc
 import scala.collection.mutable
 
 object ListCommand extends Command[Unit]("list") {
+  override def extraNames: List[String] = List("ls")
   override def description: Doc =
     Doc.text("List all installed git repos")
   def run(value: Value, cli: CliApp): Int = {

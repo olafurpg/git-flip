@@ -31,7 +31,7 @@ object SyncCommand extends Command[SyncOptions]("sync") {
               s"\n\t${app.binaryName} switch $name"
           )
           1
-        } else if (app.requireCleanStatus()) {
+        } else if (app.isDirtyStatus("sync")) {
           1
         } else {
           val originalBranch = app.minirepoBranch()

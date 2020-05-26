@@ -34,29 +34,26 @@ object StartCommand extends Command[StartOptions]("start") {
         s"${app.cli.binaryName} can only run inside a git repository"
       )
       1
-    } else if (value.name.isEmpty) {
+    } else if (value.isMissingExplicitName) {
       app.cli.error(
         "missing --name. To fix this problem, provide a name for the new minirepo:\n\t" +
           s"${app.cli.binaryName} create --name minirepo_NAME ${value.directories.mkString(" ")}"
       )
       1
-    } else if (Files.isDirectory(app.minirepo(value.name))) {
+    } else if (Files.isDirectory(app.minirepo(value.minirepoName))) {
       app.cli.error(
         s"can't create minirepo '$name' because it already exists.\n\t" +
           s"To amend this minirepo run: ${app.cli.binaryName} amend $name"
       )
       1
-    } else if (app.requireCleanStatus()) {
+    } else if (app.isDirtyStatus("create a minirepo")) {
       1
     } else if (
       Files.isRegularFile(app.git) &&
       app.requireInsideMegarepo(name)
     ) {
-      pprint.log(app.currentName())
-      ???
       1
     } else if (app.requireBranch("master", name)) {
-      ???
       1
     } else if (app.requireMasterBranchIsUpToDate(name)) {
       ???
@@ -72,11 +69,11 @@ object StartCommand extends Command[StartOptions]("start") {
           "git",
           "init",
           "--separate-git-dir",
-          app.minirepo(value.name).toString()
+          app.minirepo(value.minirepoName).toString()
         )
         _ <- {
-          writeInclude(value, app, value.name)
-          writeExclude(app, value.name)
+          writeInclude(value, app, value.minirepoName)
+          writeExclude(app, value.minirepoName)
           app.commitAll(app.syncToMegarepoMessage())
         }
         _ <- app.exec("git", "branch", "origin/master", "master")
@@ -134,12 +131,19 @@ object StartCommand extends Command[StartOptions]("start") {
   }
   def writeExclude(app: Flip, name: String): Unit = {
     val includes = app.readIncludes(name, printWarnings = true)
-    val excludes = mutable.ListBuffer.empty[String]
+    val excludes = mutable.LinkedHashSet.empty[String]
     val toplevel = app.toplevel
-    excludes += "/*"
     includes.foreach { include =>
       val relativePath = toplevel.relativize(include)
-      excludes += s"!/$relativePath"
+      1.to(relativePath.getNameCount()).foreach { i =>
+        val subpath = relativePath.subpath(0, i)
+        excludes += subpath
+          .resolveSibling("*")
+          .iterator()
+          .asScala
+          .mkString("/", "/", "")
+        excludes += s"!/$subpath"
+      }
     }
     Files.write(
       app.exclude(name),

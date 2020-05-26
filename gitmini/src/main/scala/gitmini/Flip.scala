@@ -12,9 +12,10 @@ import scala.util.Success
 import scala.util.Try
 import scala.util.control.NonFatal
 import fansi.Color
-import GitMiniEnrichments._
+import gitmini.GitMiniEnrichments._
 import java.io.PrintWriter
 import metaconfig.internal.Levenshtein
+import scala.jdk.CollectionConverters._
 
 class Flip(val cli: CliApp) {
   lazy val toplevel: Path =
@@ -96,7 +97,9 @@ class Flip(val cli: CliApp) {
       .normalize()
   def megarepo: Path =
     gitmini.resolve(megarepoName)
-  def megarepoName = "megarepo"
+  def pausefile: Path =
+    megarepo.resolve("git-flip").resolve("pause")
+  val megarepoName = "megarepo"
   def minirepo(name: String): Path = {
     gitmini.resolve(name)
   }
@@ -111,23 +114,16 @@ class Flip(val cli: CliApp) {
     new BufferedReader(new InputStreamReader(cli.in)).readLine()
   }
   def readIncludes(name: String, printWarnings: Boolean): Set[Path] = {
-    import scala.jdk.CollectionConverters._
     val i = includes(name)
     if (Files.isRegularFile(i)) {
       val t = toplevel
       val paths = Set.newBuilder[Path]
       val lines = Files.lines(i)
-      try lines.forEach { line =>
-        val dir = Paths.get(line)
-        val relativePath = dir.getName(0)
-        if (printWarnings && dir.getNameCount() != 1) {
-          cli.warn(
-            s"converting argument '$dir' into '$relativePath'. " +
-              s"Due to an implementation limitation, ${cli.binaryName} does not " +
-              s"support tracking nested subdirectories, only toplevel subdirectories."
-          )
+      try {
+        lines.forEach { line =>
+          val relativePath = Paths.get(line)
+          paths += toplevel.resolve(relativePath)
         }
-        paths += toplevel.resolve(relativePath)
       } finally {
         lines.close()
       }
@@ -141,7 +137,7 @@ class Flip(val cli: CliApp) {
       command: List[String],
       logger: ProcessLogger = defaultLogger
   ): Int = {
-    cli.info(command.mkString(" "))
+    cli.info(command.formatAsCommand)
     scala.sys.process
       .Process(command, cwd = Some(cli.workingDirectory.toFile()))
       .!(logger)
@@ -154,9 +150,7 @@ class Flip(val cli: CliApp) {
       isSilent: Boolean = true
   ): String = {
     if (!isSilent) {
-      val commands =
-        command.map(c => if (c.contains(' ')) s""""$c"""" else c).mkString(" ")
-      info(commands)
+      info(command.formatAsCommand)
     }
     val logger = new CaptureLogger()
     val exit = scala.sys.process
@@ -212,12 +206,25 @@ class Flip(val cli: CliApp) {
     }
   }
 
-  def execTty(command: String): Int = {
+  def execTty(
+      command: List[String],
+      isSilent: Boolean,
+      environment: Map[String, String] = Map.empty
+  ): Int = {
+    if (!isSilent) {
+      info(command.formatAsCommand)
+    }
+    val envp: Array[String] =
+      if (environment.isEmpty) null
+      else
+        environment.iterator.map {
+          case (k, v) => s"$k=$v"
+        }.toArray
     try {
       // Adjusted from https://stackoverflow.com/questions/29733038/running-interactive-shell-program-in-java
       val proc = Runtime
         .getRuntime()
-        .exec(Array("/bin/bash"), null, cli.workingDirectory.toFile())
+        .exec(Array("/bin/bash"), envp, cli.workingDirectory.toFile())
       val stdin = proc.getOutputStream()
       val pw = new PrintWriter(stdin)
       pw.println(s"$command < /dev/tty > /dev/tty")
@@ -306,13 +313,15 @@ class Flip(val cli: CliApp) {
     }
     isDifferent
   }
+  def isInsideMegarepo(): Boolean =
+    currentName().contains(megarepoName)
   def requireInsideMegarepo(what: String): Boolean = {
     currentName() match {
       case Some(name) =>
         val isOutside = name != megarepoName
         if (isOutside)
           error(
-              s"To fix this problem run:" +
+            s"To fix this problem run:" +
               s"\n\t${cli.binaryName} switch $megarepoName"
           )
         isOutside
@@ -320,15 +329,14 @@ class Flip(val cli: CliApp) {
         false
     }
   }
-  def requireCleanStatus(): Boolean = {
+  def isDirtyStatus(what: String): Boolean = {
     val isDirty = status().nonEmpty
     if (isDirty)
       error(
-        "can't create a minirepo with uncommitted changes. " +
+        s"can't $what with uncommitted changes. " +
           "To fix this problem, commit your unsaved changes first:" +
           "\n\tgit add . && git commit"
       )
-
     isDirty
   }
   def checkoutOriginMaster(): Int = {
