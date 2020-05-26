@@ -19,7 +19,7 @@ object InfoCommand extends Command[InfoOptions]("info") {
     val toplevel = app.toplevel
     for {
       repo <- minirepo
-      include <- app.readIncludes(repo, printWarnings = false)
+      include <- app.readIncludes(repo)
     } {
       app.cli.out.println(toplevel.relativize(include))
     }

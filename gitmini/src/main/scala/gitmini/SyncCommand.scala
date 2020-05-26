@@ -34,7 +34,7 @@ object SyncCommand extends Command[SyncOptions]("sync") {
         } else if (app.isDirtyStatus("sync")) {
           1
         } else {
-          val originalBranch = app.minirepoBranch()
+          val originalBranch = app.currentBranch()
           for {
             _ <- app.checkoutOriginMaster()
             _ <- app.pullOriginMasterInMegarepo()

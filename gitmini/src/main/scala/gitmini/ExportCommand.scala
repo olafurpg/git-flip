@@ -4,6 +4,7 @@ import metaconfig.cli.Command
 import metaconfig.cli.CliApp
 import GitMiniEnrichments._
 import java.nio.file.Files
+import scala.collection.mutable
 
 object ExportCommand extends Command[ExportOptions]("export") {
   def run(value: Value, cli: CliApp): Int = {
@@ -31,8 +32,13 @@ object ExportCommand extends Command[ExportOptions]("export") {
       .execString(List("git", "diff", "--name-only", "origin/master"))
       .linesIterator
       .toList
+    val minirepoBranch = app.currentBranch()
+    val megarepoBranch = app.flipBranchName(minirepoName, minirepoBranch)
+    val megarepoSha = app.megarepoSha()
+    val baseRef = "origin/master"
+    val includes = app.readIncludes(minirepoName).map(_.toString)
     for {
-      _ <-
+      _ <- {
         if (diff.isEmpty) {
           app.error(
             "nothing to export because the diff to origin/master is empty. " +
@@ -42,21 +48,33 @@ object ExportCommand extends Command[ExportOptions]("export") {
         } else {
           0
         }
+      }
+      _ <- app.checkoutOrCreateMegarepoBranch(megarepoBranch)
       _ <- app.exec(
         List(
           "git",
-          "format-patch",
-          "--full-index",
-          "--output-directory",
-          out.toString,
-          "origin/master..HEAD"
-        )
+          s"--git-dir=${app.megarepo}",
+          "add"
+        ) ++ diff
       )
-      _ <- SwitchCommand.run(SwitchOptions(List(app.megarepoName)), app.cli)
-      _ <- app.exec(List("git", "checkout", "--") ++ diff)
-      _ <- app.checkoutMegarepoBranch()
-      _ <- app.exec("git", "am", out.toString())
-      _ <- SwitchCommand.run(SwitchOptions(List(minirepoName)), app.cli)
+      _ <- {
+        val commitMessage =
+          Files.createTempFile(app.binaryName, "COMMIT_EDIT_MSG")
+        val template = app.execString(
+          List("git", "log", "--pretty=%B", s"$baseRef..HEAD")
+        )
+        commitMessage.writeText(template)
+        app.execTty(
+          List(
+            "git",
+            s"--git-dir=${app.megarepo}",
+            "commit",
+            "--template",
+            commitMessage.toString()
+          ),
+          isSilent = true
+        )
+      }
     } yield 0
   }
 }

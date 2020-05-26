@@ -12,7 +12,6 @@ object PauseCommand extends Command[Unit]("pause") {
         app.error("nothing to do because you are already inside the megarepo")
         0
       case Some(name) =>
-        app.pausefile.writeText(name)
         SwitchCommand.run(SwitchOptions(List(app.megarepoName)), cli)
       case None =>
         1
