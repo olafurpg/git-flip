@@ -326,6 +326,29 @@ class Flip(val cli: CliApp) {
         false
     }
   }
+  def checkoutOrCreateMegarepoBranch(targetBranchName: String): Int = {
+    if (targetBranchName == megarepoBranch()) {
+      0
+    } else {
+      for {
+        _ <- exec(
+          "git",
+          s"--git-dir=${megarepo}",
+          "branch",
+          "-f",
+          megarepoBranch,
+          "HEAD"
+        )
+        _ <- exec(
+          "git",
+          s"--git-dir=${megarepo}",
+          "symbolic-ref",
+          "HEAD",
+          megarepoBranch
+        )
+      } yield 0
+    }
+  }
   def isDirtyStatus(what: String): Boolean = {
     val isDirty = status().nonEmpty
     if (isDirty)

@@ -36,6 +36,7 @@ object ExportCommand extends Command[ExportOptions]("export") {
     val megarepoBranch = app.flipBranchName(minirepoName, minirepoBranch)
     val megarepoSha = app.megarepoSha()
     val baseRef = "origin/master"
+    val includes = app.readIncludes(minirepoName).map(_.toString)
     for {
       _ <- {
         if (diff.isEmpty) {
@@ -48,50 +49,14 @@ object ExportCommand extends Command[ExportOptions]("export") {
           0
         }
       }
-      _ <- {
-        val diffCommand =
-          List(
-            "git",
-            "diff",
-            megarepoSha
-          ) ++ app.readIncludes(minirepoName).map(_.toString)
-        val diff = app.proc(
-          diffCommand,
-          env = Map(
-            "GIT_ALTERNATE_OBJECT_DIRECTORIES" ->
-              app.megarepo.resolve("objects").toString()
-          )
-        )
-        val applyCommand = List(
+      _ <- app.checkoutOrCreateMegarepoBranch(megarepoBranch)
+      _ <- app.exec(
+        List(
           "git",
           s"--git-dir=${app.megarepo}",
-          "apply",
-          "--index",
-          "--cached"
-        )
-        val apply = app.proc(
-          applyCommand,
-          env = Map.empty
-        )
-        (diff #> apply).!
-      }
-      _ <- {
-        if (megarepoBranch == app.megarepoBranch()) {
-          0
-        } else {
-          for {
-            _ <- app.exec(
-              "git",
-              s"--git-dir=${app.megarepo}",
-              "branch",
-              "-f",
-              megarepoBranch,
-              "HEAD"
-            )
-            _ <- app.exec("git", "symbolic-ref", "HEAD", megarepoBranch)
-          } yield 0
-        }
-      }
+          "add"
+        ) ++ diff
+      )
       _ <- {
         val commitMessage =
           Files.createTempFile(app.binaryName, "COMMIT_EDIT_MSG")
