@@ -35,7 +35,7 @@ object ExportCommand extends Command[ExportOptions]("export") {
     val minirepoBranch = app.currentBranch()
     val megarepoBranch = app.flipBranchName(minirepoName, minirepoBranch)
     val megarepoSha = app.megarepoSha()
-    val startpoint = "origin/master"
+    val baseRef = "origin/master"
     for {
       _ <- {
         if (diff.isEmpty) {
@@ -55,7 +55,6 @@ object ExportCommand extends Command[ExportOptions]("export") {
             "diff",
             megarepoSha
           ) ++ app.readIncludes(minirepoName).map(_.toString)
-        pprint.log(diffCommand)
         val diff = app.proc(
           diffCommand,
           env = Map(
@@ -70,7 +69,6 @@ object ExportCommand extends Command[ExportOptions]("export") {
           "--index",
           "--cached"
         )
-        pprint.log(applyCommand)
         val apply = app.proc(
           applyCommand,
           env = Map.empty
@@ -94,25 +92,24 @@ object ExportCommand extends Command[ExportOptions]("export") {
           } yield 0
         }
       }
-      _ <- app.execTty(
-        List("git", s"--git-dir=${app.megarepo}", "commit"),
-        isSilent = false
-      )
-      _ <-
-        if (app.status().nonEmpty) {
-          app.error(
-            s"the files below have untracked changes:\n${app.status().mkString("\n")}"
-          )
-          1
-        } else 0
-      _ <- app.exec(List("git", "reset", "--hard", "origin/master"))
       _ <- {
-        val patches = mutable.ListBuffer.empty[String]
-        out.listForeach(p => patches += p.toString())
-        app.exec(List("git", "am") ++ patches.sorted)
+        val commitMessage =
+          Files.createTempFile(app.binaryName, "COMMIT_EDIT_MSG")
+        val template = app.execString(
+          List("git", "log", "--pretty", "- %B", s"$baseRef..HEAD")
+        )
+        commitMessage.writeText(template)
+        app.execTty(
+          List(
+            "git",
+            s"--git-dir=${app.megarepo}",
+            "commit",
+            "--template",
+            commitMessage.toString()
+          ),
+          isSilent = true
+        )
       }
-      _ <- app.exec("git", "checkout", megarepoBranch)
-      _ <- SwitchCommand.run(SwitchOptions(List(minirepoName)), app.cli)
     } yield 0
   }
 }
