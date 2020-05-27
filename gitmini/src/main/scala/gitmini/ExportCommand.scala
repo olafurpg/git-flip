@@ -96,7 +96,7 @@ object ExportCommand extends Command[ExportOptions]("export") {
         val commitMessage =
           Files.createTempFile(app.binaryName, "COMMIT_EDIT_MSG")
         val template = app.execString(
-          List("git", "log", "--pretty", "- %B", s"$baseRef..HEAD")
+          List("git", "log", "--pretty=%B", s"$baseRef..HEAD")
         )
         commitMessage.writeText(template)
         app.execTty(
