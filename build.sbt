@@ -14,7 +14,9 @@ addCommandAlias(
 )
 commands += Command.command("taskready") { s =>
   import scala.sys.process._
-  scala.util.Try("say 'native-image ready'".!)
+  if (System.getenv("CI") == null) {
+    scala.util.Try("say 'native-image ready'".!)
+  }
   s
 }
 
