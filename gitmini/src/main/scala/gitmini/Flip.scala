@@ -33,7 +33,8 @@ class Flip(val cli: CliApp) {
     currentSha("HEAD")
   def megarepoSha(): String =
     execString(
-      List("git", s"--git-dir=${megarepo}", "rev-parse", "--verify", "HEAD")
+      List("git", s"--git-dir=${megarepo}", "rev-parse", "--verify", "HEAD"),
+      isSilent = false
     ).trim
   def currentSha(branch: String): String =
     execString(List("git", "rev-parse", branch)).trim
@@ -143,7 +144,7 @@ class Flip(val cli: CliApp) {
   def proc(command: String*): ProcessBuilder =
     proc(command.toList, Map.empty[String, String])
   def proc(command: List[String], env: Map[String, String]): ProcessBuilder =
-    Process(command, cwd = Some(cli.workingDirectory.toFile()))
+    Process(command, cwd = Some(cli.workingDirectory.toFile()), env.toSeq: _*)
   def execString(
       command: List[String],
       isSilent: Boolean = true

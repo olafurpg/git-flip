@@ -49,26 +49,30 @@ object ExportCommand extends Command[ExportOptions]("export") {
         }
       }
       _ <- {
-        val diff = app
-          .proc(
-            List(
-              "git",
-              "diff",
-              megarepoSha
-            ) ++ app.readIncludes(minirepoName).map(_.toString),
-            env = Map(
-              "GIT_ALTERNATE_OBJECT_DIRECTORIES" ->
-                app.megarepo.resolve("objects").toString()
-            )
-          )
-        val apply = app.proc(
+        val diffCommand =
           List(
             "git",
-            s"--git-dir=${app.megarepo}",
-            "apply",
-            "--index",
-            "--cached"
-          ),
+            "diff",
+            megarepoSha
+          ) ++ app.readIncludes(minirepoName).map(_.toString)
+        pprint.log(diffCommand)
+        val diff = app.proc(
+          diffCommand,
+          env = Map(
+            "GIT_ALTERNATE_OBJECT_DIRECTORIES" ->
+              app.megarepo.resolve("objects").toString()
+          )
+        )
+        val applyCommand = List(
+          "git",
+          s"--git-dir=${app.megarepo}",
+          "apply",
+          "--index",
+          "--cached"
+        )
+        pprint.log(applyCommand)
+        val apply = app.proc(
+          applyCommand,
           env = Map.empty
         )
         (diff #> apply).!
@@ -90,7 +94,10 @@ object ExportCommand extends Command[ExportOptions]("export") {
           } yield 0
         }
       }
-      _ <- app.exec("git", s"--git-dir=${app.megarepo}", "commit")
+      _ <- app.execTty(
+        List("git", s"--git-dir=${app.megarepo}", "commit"),
+        isSilent = false
+      )
       _ <-
         if (app.status().nonEmpty) {
           app.error(
