@@ -34,6 +34,8 @@ object ExportCommand extends Command[ExportOptions]("export") {
       .toList
     val minirepoBranch = app.currentBranch()
     val megarepoBranch = app.flipBranchName(minirepoName, minirepoBranch)
+    val megarepoSha = app.megarepoSha()
+    val startpoint = "origin/master"
     for {
       _ <- {
         if (diff.isEmpty) {
@@ -46,16 +48,56 @@ object ExportCommand extends Command[ExportOptions]("export") {
           0
         }
       }
-      _ <- app.exec(
-        "git",
-        "format-patch",
-        "--output-directory",
-        out.toString(),
-        "origin/master..HEAD"
-      )
-      _ <- SwitchCommand.run(SwitchOptions(List(app.megarepoName)), app.cli)
-      _ <- app.exec(List("git", "checkout", "--") ++ diff)
-      _ <- app.checkoutOrCreate(megarepoBranch)
+      _ <- {
+        val diff = app
+          .proc(
+            List(
+              "git",
+              "diff",
+              megarepoSha
+            ) ++ app.readIncludes(minirepoName).map(_.toString),
+            env = Map(
+              "GIT_ALTERNATE_OBJECT_DIRECTORIES" ->
+                app.megarepo.resolve("objects").toString()
+            )
+          )
+        val apply = app.proc(
+          List(
+            "git",
+            s"--git-dir=${app.megarepo}",
+            "apply",
+            "--index",
+            "--cached"
+          ),
+          env = Map.empty
+        )
+        (diff #> apply).!
+      }
+      _ <- {
+        if (megarepoBranch == app.megarepoBranch()) {
+          0
+        } else {
+          for {
+            _ <- app.exec(
+              "git",
+              s"--git-dir=${app.megarepo}",
+              "branch",
+              "-f",
+              megarepoBranch,
+              "HEAD"
+            )
+            _ <- app.exec("git", "symbolic-ref", "HEAD", megarepoBranch)
+          } yield 0
+        }
+      }
+      _ <- app.exec("git", s"--git-dir=${app.megarepo}", "commit")
+      _ <-
+        if (app.status().nonEmpty) {
+          app.error(
+            s"the files below have untracked changes:\n${app.status().mkString("\n")}"
+          )
+          1
+        } else 0
       _ <- app.exec(List("git", "reset", "--hard", "origin/master"))
       _ <- {
         val patches = mutable.ListBuffer.empty[String]

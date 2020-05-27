@@ -1,5 +1,7 @@
 package gitmini
 
+import scala.sys.process.ProcessBuilder
+import scala.sys.process.Process
 import metaconfig.cli.CliApp
 import java.io.BufferedReader
 import java.io.InputStreamReader
@@ -29,6 +31,10 @@ class Flip(val cli: CliApp) {
     execString(List("git", "rev-parse", "--abbrev-ref", "HEAD")).trim
   def currentHeadSha(): String =
     currentSha("HEAD")
+  def megarepoSha(): String =
+    execString(
+      List("git", s"--git-dir=${megarepo}", "rev-parse", "--verify", "HEAD")
+    ).trim
   def currentSha(branch: String): String =
     execString(List("git", "rev-parse", branch)).trim
   def megarepoBranch(): String =
@@ -102,7 +108,7 @@ class Flip(val cli: CliApp) {
     cli.err.print(message)
     new BufferedReader(new InputStreamReader(cli.in)).readLine()
   }
-  def readIncludes(name: String, printWarnings: Boolean): Set[Path] = {
+  def readIncludes(name: String): Set[Path] = {
     val i = includes(name)
     if (Files.isRegularFile(i)) {
       val t = toplevel
@@ -134,6 +140,10 @@ class Flip(val cli: CliApp) {
   def exec(command: String*): Int = {
     exec(command.toList)
   }
+  def proc(command: String*): ProcessBuilder =
+    proc(command.toList, Map.empty[String, String])
+  def proc(command: List[String], env: Map[String, String]): ProcessBuilder =
+    Process(command, cwd = Some(cli.workingDirectory.toFile()))
   def execString(
       command: List[String],
       isSilent: Boolean = true

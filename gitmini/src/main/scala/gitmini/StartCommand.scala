@@ -86,22 +86,6 @@ object StartCommand extends Command[StartOptions]("start") {
           app.commitAll(app.syncToMegarepoMessage())
         }
         _ <- app.exec("git", "branch", "origin/master", "master")
-        _ <- app.exec(
-          "git",
-          s"--git-dir=${app.megarepo}",
-          "remote",
-          "add",
-          remoteName,
-          minirepo
-        )
-        _ <- app.exec(
-          // NOTE(olafur): use '/usr/bin/git' instead of 'git' since Apple git
-          // supports fetching from local file remotes.
-          "/usr/bin/git",
-          s"--git-dir=${app.megarepo}",
-          "fetch",
-          remoteName
-        )
       } yield {
         app.info(onSuccessMessage(app))
         0
@@ -155,7 +139,7 @@ object StartCommand extends Command[StartOptions]("start") {
     )
   }
   def writeExclude(app: Flip, name: String): Unit = {
-    val includes = app.readIncludes(name, printWarnings = true)
+    val includes = app.readIncludes(name)
     val excludes = mutable.LinkedHashSet.empty[String]
     val toplevel = app.toplevel
     includes.foreach { include =>
