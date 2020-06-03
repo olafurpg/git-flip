@@ -23,8 +23,8 @@ object GitMini {
       commands = List(
         InstallCommand,
         UninstallCommand,
-        StartCommand,
-        StopCommand,
+        CreateCommand,
+        RemoveCommand,
         PauseCommand,
         PlayCommand,
         ToggleCommand,

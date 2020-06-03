@@ -3,7 +3,7 @@ package gitmini
 import java.nio.file.Path
 import metaconfig.annotation.ExtraName
 
-final case class StartOptions(
+final case class CreateOptions(
     name: String = "",
     @ExtraName("remainingArgs")
     directories: List[Path] = Nil
@@ -27,10 +27,10 @@ final case class StartOptions(
     }
 }
 
-object StartOptions {
-  val default = StartOptions()
+object CreateOptions {
+  val default = CreateOptions()
   implicit lazy val surface =
-    metaconfig.generic.deriveSurface[StartOptions]
+    metaconfig.generic.deriveSurface[CreateOptions]
   implicit lazy val codec =
-    metaconfig.generic.deriveCodec[StartOptions](default)
+    metaconfig.generic.deriveCodec[CreateOptions](default)
 }

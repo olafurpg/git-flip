@@ -17,6 +17,7 @@ object InfoCommand extends Command[InfoOptions]("info") {
       case els => els
     }
     val toplevel = app.toplevel
+    Map.apply[Int, Int](1 -> 2)
     for {
       repo <- minirepo
       include <- app.readIncludes(repo)
