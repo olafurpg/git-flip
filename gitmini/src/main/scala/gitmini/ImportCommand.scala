@@ -7,7 +7,7 @@ import java.nio.file.Files
 import org.typelevel.paiges.Doc
 import metaconfig.cli.Messages
 
-object SyncCommand extends Command[SyncOptions]("sync") {
+object ImportCommand extends Command[SyncOptions]("import") {
   override def description: Doc =
     Doc.text("Pull latest changes from the megarepo into the minirepo")
   override def options: Doc = Messages.options(SyncOptions.default)

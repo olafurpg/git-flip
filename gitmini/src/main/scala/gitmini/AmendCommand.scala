@@ -34,7 +34,7 @@ object AmendCommand extends Command[AmendOptions]("amend") {
                 isSilent = true
               )
               .ifSuccessful {
-                StartCommand.writeExclude(app, name)
+                CreateCommand.writeExclude(app, name)
                 app.commitAll(s"${app.binaryName}: amend minirepo")
               }
         }

@@ -13,7 +13,7 @@ import java.nio.file.Paths
 import scala.util.Try
 import scala.io.StdIn
 
-object StartCommand extends Command[StartOptions]("start") {
+object CreateCommand extends Command[CreateOptions]("create") {
   override def description: Doc = Doc.text("Create a new minirepo")
   def run(value: Value, cli: CliApp): Int = {
     val app = new Flip(cli)
@@ -63,7 +63,7 @@ object StartCommand extends Command[StartOptions]("start") {
         s"can't create minirepo with the name '${value.minirepoName}' because " +
           s"there is already another remote with a conflicting name. " +
           s"To fix this problem, either remove the remote with 'git remote remove " +
-          s"$remoteName' or use a different name with '${app.binaryName} start --name OTHER_NAME'."
+          s"$remoteName' or use a different name with '${app.binaryName} ${name} --name OTHER_NAME'."
       )
       1
     } else if (InstallCommand.run((), app, isInstallCommand = false) != 0) {

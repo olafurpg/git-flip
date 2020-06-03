@@ -5,8 +5,11 @@ import metaconfig.cli.CliApp
 import GitMiniEnrichments._
 import java.nio.file.Files
 import scala.collection.mutable
+import org.typelevel.paiges.Doc
 
 object ExportCommand extends Command[ExportOptions]("export") {
+  override def description: Doc =
+    Doc.text("Commit the current minirepo branch onto the megarepo")
   def run(value: Value, cli: CliApp): Int = {
     val app = new Flip(cli)
     app.currentName() match {
