@@ -3,8 +3,11 @@ package gitmini
 import metaconfig.cli.Command
 import metaconfig.cli.CliApp
 import GitMiniEnrichments._
+import org.typelevel.paiges.Doc
 
 object ArcDiffCommand extends Command[ArcDiffOptions]("arc-diff") {
+  override def description: Doc =
+    Doc.text("Run 'arc diff' for this minirepo branch")
   def run(value: Value, cli: CliApp): Int = {
     val app = new Flip(cli)
     app.currentName() match {

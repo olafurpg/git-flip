@@ -26,6 +26,7 @@ lazy val gitmini = project
     mainClass := Some("gitmini.GitMini"),
     scalaVersion := "2.13.2",
     libraryDependencies ++= List(
+      "org.scala-lang" % "scala-compiler" % scalaVersion.value,
       "com.geirsson" %% "metaconfig-core" % "0.9.10",
       "org.scalameta" %% "munit" % "0.7.7" % Test
     ),

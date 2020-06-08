@@ -4,8 +4,11 @@ import metaconfig.cli.Command
 import metaconfig.cli.CliApp
 import java.nio.file.Files
 import GitMiniEnrichments._
+import org.typelevel.paiges.Doc
 
 object PlayCommand extends Command[Unit]("play") {
+  override def description: Doc =
+    Doc.text("Switch back to the last active minireop")
   def run(value: Value, cli: CliApp): Int = {
     val app = new Flip(cli)
     app.currentName() match {
