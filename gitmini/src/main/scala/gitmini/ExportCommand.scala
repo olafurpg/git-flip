@@ -64,7 +64,7 @@ object ExportCommand extends Command[ExportOptions]("export") {
         val commitMessage =
           Files.createTempFile(app.binaryName, "COMMIT_EDIT_MSG")
         val template = app.execString(
-          List("git", "log", "--pretty=%B", s"$baseRef..HEAD")
+          List("git", "log", "--pretty=tformat:%B", s"$baseRef..HEAD")
         )
         commitMessage.writeText(template)
         app.execTty(
@@ -72,7 +72,9 @@ object ExportCommand extends Command[ExportOptions]("export") {
             "git",
             s"--git-dir=${app.megarepo}",
             "commit",
-            "--template",
+            "--allow-emptyjjj",
+            "--no-status",
+            "--file",
             commitMessage.toString()
           ),
           isSilent = true

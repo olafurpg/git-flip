@@ -86,6 +86,30 @@ object CreateCommand extends Command[CreateOptions]("create") {
           app.commitAll(app.syncToMegarepoMessage())
         }
         _ <- app.exec("git", "branch", "origin/master", "master")
+        _ <- {
+          val config = scala.util.Try {
+            app
+              .execString(
+                List(
+                  "git",
+                  s"--git-dir=${app.megarepo}",
+                  "config",
+                  "--get",
+                  "remote.origin.url"
+                ),
+                isSilent = true
+              )
+              .trim()
+          }.toOption
+          config match {
+            case Some(remote) =>
+              // NOTE(olafur): we set the origin remote to prevent errors in tool
+              // that assume there exists a remote.
+              app.exec("git", "remote", "add", "origin", remote)
+            case None =>
+              0
+          }
+        }
       } yield {
         app.info(onSuccessMessage(app))
         0

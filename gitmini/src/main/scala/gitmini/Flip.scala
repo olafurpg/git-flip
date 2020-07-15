@@ -128,7 +128,17 @@ class Flip(val cli: CliApp) {
       Set.empty
     }
   }
-  private def defaultLogger = ProcessLogger(out => cli.err.println(out))
+  private def defaultLogger =
+    ProcessLogger(out => {
+      if (
+        out.startsWith("error: object directory") &&
+        out.contains("does not exist; check .git/objects/info/alternates")
+      ) {
+        ()
+      } else {
+        cli.err.println(out)
+      }
+    })
   def exec(
       command: List[String],
       logger: ProcessLogger = defaultLogger
@@ -158,6 +168,7 @@ class Flip(val cli: CliApp) {
       .!(logger)
     if (exit == 0) logger.baos.toString()
     else {
+      pprint.log(logger.toString())
       throw new RuntimeException(
         s"non-zero exit code $exit running command $command:\n$logger"
       )
@@ -218,7 +229,7 @@ class Flip(val cli: CliApp) {
       val tmp = Files.createTempFile("git-mini", "command.txt")
       tmp.writeText(s"${command.formatAsCommand} < /dev/tty > /dev/tty")
       val bash = Process(List("/bin/bash"), cwd = cli.workingDirectory.toFile())
-      (bash #< tmp.toFile()).!
+      (bash #< tmp.toFile()).!(defaultLogger)
     } catch {
       case NonFatal(e) =>
         e.printStackTrace(cli.out)
@@ -330,13 +341,14 @@ class Flip(val cli: CliApp) {
     if (targetBranchName == megarepoBranch()) {
       0
     } else {
+      pprint.log(megarepoBranch())
       for {
         _ <- exec(
           "git",
           s"--git-dir=${megarepo}",
           "branch",
           "-f",
-          megarepoBranch,
+          targetBranchName,
           "HEAD"
         )
         _ <- exec(
@@ -344,7 +356,7 @@ class Flip(val cli: CliApp) {
           s"--git-dir=${megarepo}",
           "symbolic-ref",
           "HEAD",
-          megarepoBranch
+          s"refs/heads/$targetBranchName"
         )
       } yield 0
     }
